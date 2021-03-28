@@ -1,8 +1,8 @@
-import GameBoard from './Board';
+import Game from './Game';
 import './styles.scss';
 
 export function main() {
-  GameBoard.init();
+  Game.init();
 }
 
 main();

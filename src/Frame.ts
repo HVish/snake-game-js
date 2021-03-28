@@ -63,9 +63,14 @@ export default class Frame {
     this.makeBorderWall();
   }
 
-  private drawBrick(x: number, y: number) {
+  private drawBrick(_x: number, _y: number) {
+    const x = Frame.getXCoordinate(_x);
+    const y = Frame.getYCoordinate(_y);
+
     this.ctx.fillStyle = 'rgba(255, 0, 0, 0.8)';
-    this.ctx.fillRect(Frame.getXCoordinate(x), Frame.getYCoordinate(y), Frame.unit, Frame.unit);
+    this.ctx.fillRect(x, y, Frame.unit, Frame.unit);
+    this.ctx.strokeStyle = '#fff';
+    this.ctx.strokeRect(x, y, Frame.unit, Frame.unit);
   }
 
   private makeBorderWall() {
