@@ -3,7 +3,7 @@ import Frame from './Frame';
 type BodyCellPosition = [x: number, y: number];
 
 interface CellOptions {
-  fill?: boolean;
+  fillStyle?: string;
   clear?: boolean;
 }
 
@@ -15,8 +15,6 @@ enum Direction {
 }
 
 export default class Snake {
-  private length = 4;
-
   public static instance: Snake | undefined;
 
   public static create(ctx: CanvasRenderingContext2D) {
@@ -39,12 +37,12 @@ export default class Snake {
     this.ctx = ctx;
   }
 
-  private drawCell(_x: number, _y: number, options: CellOptions) {
-    const x = Frame.getXCoordinate(_x) + 1;
-    const y = Frame.getXCoordinate(_y) + 1;
-    const size = Frame.unit - 1;
+  public drawCell(_x: number, _y: number, options?: CellOptions) {
+    const x = Frame.getXCoordinate(_x) + 2;
+    const y = Frame.getXCoordinate(_y) + 2;
+    const size = Frame.unit - 4;
 
-    if (options.clear) {
+    if (options?.clear) {
       // to clear a rectangle fill it with background color
       this.ctx.fillStyle = '#000';
       this.ctx.fillRect(x, y, size, size);
@@ -53,59 +51,79 @@ export default class Snake {
       return;
     }
 
-    /** stroke width */
-    const sw = 2;
-
     // outer rectangle
-    this.ctx.fillStyle = 'rgba(0, 255, 0, 0.8)';
+    this.ctx.fillStyle = options?.fillStyle || 'rgba(0, 255, 0, 0.8)';
     this.ctx.fillRect(x, y, size, size);
-
-    // // inner rectangle
-    // this.ctx.fillStyle = '#000';
-    // this.ctx.fillRect(x + sw, y + sw, Frame.unit - 2 * sw, Frame.unit - 2 * sw);
   }
 
   public draw() {
-    this.body.forEach(([x, y], index) => {
-      this.drawCell(x, y, { fill: index === 0 });
+    this.body.forEach(([x, y]) => {
+      this.drawCell(x, y);
     });
   }
 
   private addCell(x: number, y: number) {
     this.body.unshift([x, y]);
-    this.drawCell(x, y, { fill: true });
+    this.drawCell(x, y);
   }
 
   /** used to enable/disable turning */
   private canTurn = false;
 
-  public move() {
+  public move(foodPos: { x: number; y: number }) {
     // make head cell as normal body cell
     const [headX, headY] = this.body[0];
     this.drawCell(headX, headY, { clear: true });
-    this.drawCell(headX, headY, { fill: false });
+    this.drawCell(headX, headY);
 
     // clear tail cell
     const [tailX, tailY] = this.body.pop()!;
     this.drawCell(tailX, tailY, { clear: true });
 
+    let ateFood = false;
+
     switch (this.direction) {
-      case Direction.EAST:
-        this.addCell(headX + 1, headY);
+      case Direction.EAST: {
+        const x = headX + 1;
+        this.addCell(x, headY);
+        if (x === foodPos.x && headY === foodPos.y) {
+          this.addCell(x + 1, headY);
+          ateFood = true;
+        }
         break;
-      case Direction.WEST:
-        this.addCell(headX - 1, headY);
+      }
+      case Direction.WEST: {
+        const x = headX - 1;
+        this.addCell(x, headY);
+        if (x === foodPos.x && headY === foodPos.y) {
+          this.addCell(x - 1, headY);
+          ateFood = true;
+        }
         break;
-      case Direction.NORTH:
-        this.addCell(headX, headY - 1);
+      }
+      case Direction.NORTH: {
+        const y = headY - 1;
+        this.addCell(headX, y);
+        if (headX === foodPos.x && y === foodPos.y) {
+          this.addCell(headX, y - 1);
+          ateFood = true;
+        }
         break;
-      case Direction.SOUTH:
-        this.addCell(headX, headY + 1);
+      }
+      case Direction.SOUTH: {
+        const y = headY + 1;
+        this.addCell(headX, y);
+        if (headX === foodPos.x && y === foodPos.y) {
+          this.addCell(headX, y + 1);
+          ateFood = true;
+        }
         break;
+      }
     }
 
     // enable turning again
     this.canTurn = true;
+    return ateFood;
   }
 
   public turn(side: 'left' | 'right' | 'up' | 'down') {
