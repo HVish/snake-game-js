@@ -62,7 +62,12 @@ export default class Game {
     if (this.timer) return;
 
     const delay = 200 - 100 * this.speedFactor;
-    this.timer = setInterval(() => this.snake.move(), delay);
+    this.timer = setInterval(() => {
+      const isDead = this.snake.move();
+      if (isDead) {
+        this.pause();
+      }
+    }, delay);
   }
 
   public pause() {

@@ -1,5 +1,8 @@
 import { windowBounds } from './utils';
 
+export type CellPosition = [x: number, y: number];
+export const cellPositionHash = (cell: CellPosition) => cell.join();
+
 export default class Frame {
   public static readonly unit = 20;
 
@@ -11,6 +14,8 @@ export default class Frame {
 
   public static MIN_Y = 0;
   public static MAX_Y = 0;
+
+  public static occupiedCellMap: { [cellPositionHash: string]: boolean } = {};
 
   private static instance: Frame | undefined = undefined;
 
@@ -63,7 +68,7 @@ export default class Frame {
     this.makeBorderWall();
   }
 
-  private drawBrick(_x: number, _y: number) {
+  private drawBrick([_x, _y]: CellPosition) {
     const x = Frame.getXCoordinate(_x);
     const y = Frame.getYCoordinate(_y);
 
@@ -71,17 +76,19 @@ export default class Frame {
     this.ctx.fillRect(x, y, Frame.unit, Frame.unit);
     this.ctx.strokeStyle = '#fff';
     this.ctx.strokeRect(x, y, Frame.unit, Frame.unit);
+
+    Frame.occupiedCellMap[cellPositionHash([_x, _y])] = true;
   }
 
   private makeBorderWall() {
     for (let x = 0; x <= Frame.MAX_X; x++) {
-      this.drawBrick(x, 0); // top wall
-      this.drawBrick(x, Frame.MAX_Y); // bottom wall
+      this.drawBrick([x, 0]); // top wall
+      this.drawBrick([x, Frame.MAX_Y]); // bottom wall
     }
 
     for (let y = 1; y < Frame.MAX_Y; y++) {
-      this.drawBrick(0, y); // left wall
-      this.drawBrick(Frame.MAX_X, y); // right wall
+      this.drawBrick([0, y]); // left wall
+      this.drawBrick([Frame.MAX_X, y]); // right wall
     }
   }
 }

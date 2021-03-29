@@ -1,7 +1,5 @@
-import Frame from './Frame';
+import Frame, { CellPosition, cellPositionHash } from './Frame';
 import { getRandomInt } from './utils';
-
-type CellPosition = [x: number, y: number];
 
 interface CellOptions {
   fillStyle?: string;
@@ -41,7 +39,9 @@ export default class Snake {
     this.ctx = ctx;
   }
 
-  public drawCell(_x: number, _y: number, options?: CellOptions) {
+  public drawCell([_x, _y]: CellPosition, options?: CellOptions) {
+    const cellHash = cellPositionHash([_x, _y]);
+
     const x = Frame.getXCoordinate(_x) + 2;
     const y = Frame.getXCoordinate(_y) + 2;
     const size = Frame.unit - 4;
@@ -52,12 +52,16 @@ export default class Snake {
       this.ctx.fillRect(x, y, size, size);
       this.ctx.strokeStyle = '#000';
       this.ctx.strokeRect(x, y, size, size);
+
+      Frame.occupiedCellMap[cellHash] = false;
       return;
     }
 
     // outer rectangle
     this.ctx.fillStyle = options?.fillStyle || 'rgba(0, 255, 0, 0.8)';
     this.ctx.fillRect(x, y, size, size);
+
+    Frame.occupiedCellMap[cellHash] = true;
   }
 
   public draw() {
@@ -68,26 +72,35 @@ export default class Snake {
       this.makeFood();
     } else {
       // repaint food at same position
-      this.makeFood(foodX, foodY);
+      this.makeFood(this.food);
     }
 
-    this.body.forEach(([x, y]) => {
-      this.drawCell(x, y);
+    this.body.forEach((cell) => {
+      this.drawCell(cell);
     });
   }
 
-  private addCell(x: number, y: number) {
-    this.body.unshift([x, y]);
-    this.drawCell(x, y);
+  private addCell(cell: CellPosition) {
+    this.body.unshift(cell);
+    this.drawCell(cell);
   }
 
-  private makeFood(_x?: number, _y?: number) {
-    const x = _x !== undefined ? _x : getRandomInt(Frame.MIN_X + 1, Frame.MAX_X - 1);
-    const y = _y !== undefined ? _y : getRandomInt(Frame.MIN_Y + 1, Frame.MAX_Y - 1);
+  private makeFood(cell?: CellPosition) {
+    if (!cell) {
+      /**
+       * loop to ensure that new food position does not
+       * coincide with any walls of snake's body cell position
+       */
+      do {
+        cell = [
+          getRandomInt(Frame.MIN_X + 1, Frame.MAX_X - 1), // x
+          getRandomInt(Frame.MIN_Y + 1, Frame.MAX_Y - 1), // y
+        ];
+        this.food = cell;
+      } while (Frame.occupiedCellMap[cellPositionHash(cell)]);
+    }
 
-    this.food = [x, y];
-
-    this.drawCell(x, y, {
+    this.drawCell(this.food, {
       fillStyle: 'rgba(255, 255, 0, 0.8)',
     });
   }
@@ -117,31 +130,59 @@ export default class Snake {
     const [headX, headY] = this.body[0];
 
     if (headX === foodX && headY === foodY) {
-      this.addCell(...this.getNextHead());
+      this.addCell(this.getNextHead());
       this.makeFood();
     }
+  }
+
+  private checkIfDead() {
+    const [foodX, foodY] = this.food;
+    const [headX, headY] = this.getNextHead();
+
+    if (
+      !(foodX === headX && foodY === headY) && // not food position
+      Frame.occupiedCellMap[cellPositionHash([headX, headY])]
+    ) {
+      // snake is self-hit of hit to a wall
+      this.kill();
+      return true;
+    }
+
+    return false;
+  }
+
+  private kill() {
+    this.body.forEach((cell, index) => {
+      this.drawCell(cell, { clear: true });
+      if (index === 0) {
+        // head
+        this.drawCell(cell, { fillStyle: 'rgba(255, 0, 0, 0.5)' });
+      } else {
+        this.drawCell(cell, { fillStyle: 'rgba(110, 110, 110, 0.8)' });
+      }
+    });
   }
 
   /** used to enable/disable turning */
   private canTurn = false;
 
   public move() {
-    // make head cell as normal body cell
-    const [headX, headY] = this.body[0];
-    this.drawCell(headX, headY, { clear: true });
-    this.drawCell(headX, headY);
+    const isDead = this.checkIfDead();
+    if (isDead) return true;
 
     // clear tail cell
-    const [tailX, tailY] = this.body.pop()!;
-    this.drawCell(tailX, tailY, { clear: true });
+    const tailCell = this.body.pop()!;
+    this.drawCell(tailCell, { clear: true });
 
-    const [nextHeadX, nextHeadY] = this.getNextHead();
-    this.addCell(nextHeadX, nextHeadY);
+    const nextCell = this.getNextHead();
 
+    // make new head cell
+    this.addCell(nextCell);
     this.eatFoodIfAvailable();
 
     // enable turning again
     this.canTurn = true;
+    return isDead;
   }
 
   public turn(side: 'left' | 'right' | 'up' | 'down') {
