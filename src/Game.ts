@@ -1,6 +1,6 @@
 import Frame from './Frame';
 import Snake from './Snake';
-import { getRandomInt, windowBounds } from './utils';
+import { windowBounds } from './utils';
 
 type SpeedFactor = 1 | 2 | 3 | 4;
 
@@ -53,20 +53,7 @@ export default class Game {
 
     this.frame.draw();
     this.snake.draw();
-
-    if (this.foodPos.x !== -1 && this.foodPos.y !== -1) {
-      this.createFood(this.foodPos.x, this.foodPos.y);
-    }
   };
-
-  private createFood(_x?: number, _y?: number) {
-    this.foodPos.x = _x !== undefined ? _x : getRandomInt(Frame.MIN_X + 1, Frame.MAX_X - 1);
-    this.foodPos.y = _y !== undefined ? _y : getRandomInt(Frame.MIN_Y + 1, Frame.MAX_Y - 1);
-
-    this.snake.drawCell(this.foodPos.x, this.foodPos.y, {
-      fillStyle: 'rgba(255, 255, 0, 0.8)',
-    });
-  }
 
   private speedFactor: SpeedFactor = 1;
   private timer: NodeJS.Timeout | undefined = undefined;
@@ -74,17 +61,8 @@ export default class Game {
   public play() {
     if (this.timer) return;
 
-    // create food
-    if (this.foodPos.x === -1) {
-      this.createFood();
-    }
-
-    this.timer = setInterval(() => {
-      const ateFood = this.snake.move(this.foodPos);
-      if (ateFood) {
-        this.createFood();
-      }
-    }, 200 - 100 * this.speedFactor);
+    const delay = 200 - 100 * this.speedFactor;
+    this.timer = setInterval(() => this.snake.move(), delay);
   }
 
   public pause() {

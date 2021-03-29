@@ -1,6 +1,7 @@
 import Frame from './Frame';
+import { getRandomInt } from './utils';
 
-type BodyCellPosition = [x: number, y: number];
+type CellPosition = [x: number, y: number];
 
 interface CellOptions {
   fillStyle?: string;
@@ -26,7 +27,10 @@ export default class Snake {
 
   private direction: Direction = Direction.EAST;
 
-  private body: BodyCellPosition[] = [
+  /** x, y co-ordinate index */
+  public food: CellPosition = [-1, -1];
+
+  private body: CellPosition[] = [
     [4, 1], // head
     [3, 1],
     [2, 1],
@@ -57,6 +61,16 @@ export default class Snake {
   }
 
   public draw() {
+    const [foodX, foodY] = this.food;
+
+    if (foodX === -1 && foodY === -1) {
+      // create new food
+      this.makeFood();
+    } else {
+      // repaint food at same position
+      this.makeFood(foodX, foodY);
+    }
+
     this.body.forEach(([x, y]) => {
       this.drawCell(x, y);
     });
@@ -67,10 +81,51 @@ export default class Snake {
     this.drawCell(x, y);
   }
 
+  private makeFood(_x?: number, _y?: number) {
+    const x = _x !== undefined ? _x : getRandomInt(Frame.MIN_X + 1, Frame.MAX_X - 1);
+    const y = _y !== undefined ? _y : getRandomInt(Frame.MIN_Y + 1, Frame.MAX_Y - 1);
+
+    this.food = [x, y];
+
+    this.drawCell(x, y, {
+      fillStyle: 'rgba(255, 255, 0, 0.8)',
+    });
+  }
+
+  private getNextHead(): CellPosition {
+    const [headX, headY] = this.body[0];
+    switch (this.direction) {
+      case Direction.EAST:
+        return [headX + 1, headY];
+      case Direction.WEST:
+        return [headX - 1, headY];
+      case Direction.NORTH:
+        return [headX, headY - 1];
+      case Direction.SOUTH:
+        return [headX, headY + 1];
+      default:
+        return [headX, headY];
+    }
+  }
+
+  /**
+   * Eat food if available,
+   * also create another food if ate food.
+   */
+  private eatFoodIfAvailable() {
+    const [foodX, foodY] = this.food;
+    const [headX, headY] = this.body[0];
+
+    if (headX === foodX && headY === foodY) {
+      this.addCell(...this.getNextHead());
+      this.makeFood();
+    }
+  }
+
   /** used to enable/disable turning */
   private canTurn = false;
 
-  public move(foodPos: { x: number; y: number }) {
+  public move() {
     // make head cell as normal body cell
     const [headX, headY] = this.body[0];
     this.drawCell(headX, headY, { clear: true });
@@ -80,50 +135,13 @@ export default class Snake {
     const [tailX, tailY] = this.body.pop()!;
     this.drawCell(tailX, tailY, { clear: true });
 
-    let ateFood = false;
+    const [nextHeadX, nextHeadY] = this.getNextHead();
+    this.addCell(nextHeadX, nextHeadY);
 
-    switch (this.direction) {
-      case Direction.EAST: {
-        const x = headX + 1;
-        this.addCell(x, headY);
-        if (x === foodPos.x && headY === foodPos.y) {
-          this.addCell(x + 1, headY);
-          ateFood = true;
-        }
-        break;
-      }
-      case Direction.WEST: {
-        const x = headX - 1;
-        this.addCell(x, headY);
-        if (x === foodPos.x && headY === foodPos.y) {
-          this.addCell(x - 1, headY);
-          ateFood = true;
-        }
-        break;
-      }
-      case Direction.NORTH: {
-        const y = headY - 1;
-        this.addCell(headX, y);
-        if (headX === foodPos.x && y === foodPos.y) {
-          this.addCell(headX, y - 1);
-          ateFood = true;
-        }
-        break;
-      }
-      case Direction.SOUTH: {
-        const y = headY + 1;
-        this.addCell(headX, y);
-        if (headX === foodPos.x && y === foodPos.y) {
-          this.addCell(headX, y + 1);
-          ateFood = true;
-        }
-        break;
-      }
-    }
+    this.eatFoodIfAvailable();
 
     // enable turning again
     this.canTurn = true;
-    return ateFood;
   }
 
   public turn(side: 'left' | 'right' | 'up' | 'down') {
