@@ -170,6 +170,8 @@ export default class Snake {
     const isDead = this.checkIfDead();
     if (isDead) return true;
 
+    this.eatFoodIfAvailable();
+
     // clear tail cell
     const tailCell = this.body.pop()!;
     this.drawCell(tailCell, { clear: true });
@@ -178,7 +180,6 @@ export default class Snake {
 
     // make new head cell
     this.addCell(nextCell);
-    this.eatFoodIfAvailable();
 
     // enable turning again
     this.canTurn = true;
