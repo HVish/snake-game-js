@@ -13,6 +13,12 @@ enum Direction {
   WEST,
 }
 
+const eatAudio = new Audio('assets/eat.wav');
+eatAudio.preload = 'auto';
+
+const outAudio = new Audio('assets/out.wav');
+outAudio.preload = 'auto';
+
 export default class Snake {
   public static instance: Snake | undefined;
 
@@ -130,6 +136,7 @@ export default class Snake {
     const [headX, headY] = this.body[0];
 
     if (headX === foodX && headY === foodY) {
+      eatAudio.play();
       this.addCell(this.getNextHead());
       this.makeFood();
     }
@@ -152,6 +159,7 @@ export default class Snake {
   }
 
   private kill() {
+    outAudio.play();
     this.body.forEach((cell, index) => {
       this.drawCell(cell, { clear: true });
       if (index === 0) {

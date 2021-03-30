@@ -1,6 +1,7 @@
 // @ts-check
 const path = require('path');
 
+const CopyPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 /**
@@ -36,6 +37,9 @@ module.exports = {
   plugins: [
     new HtmlWebpackPlugin({
       template: path.resolve(__dirname, 'src', 'index.html'),
+    }),
+    new CopyPlugin({
+      patterns: [{ from: 'src/assets', to: 'assets' }],
     }),
   ],
 };
