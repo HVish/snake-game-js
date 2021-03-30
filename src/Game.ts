@@ -1,26 +1,42 @@
 import Frame from './Frame';
 import Snake from './Snake';
-import { windowBounds } from './utils';
 
-type SpeedFactor = 1 | 2 | 3 | 4;
+enum GameLevel {
+  ONE = 1,
+  TWO,
+  THREE,
+  FOUR,
+}
+
+interface GameOptions {
+  width: number;
+  height: number;
+  onScoreUpdate?: (score: number) => void;
+  onPlay?: (score: number) => void;
+  onPause?: () => void;
+  onGameOver?: () => void;
+}
 
 export default class Game {
   private static instance: Game | undefined;
 
-  public static init() {
+  public static init(options: GameOptions) {
     if (Game.instance) return Game.instance;
-    return new Game();
+    return new Game(options);
   }
 
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
 
+  private canvasWidth: number;
+  private canvasHeight: number;
+
   private frame: Frame;
   private snake: Snake;
 
-  private foodPos = { x: -1, y: -1 };
+  private options: GameOptions;
 
-  constructor() {
+  constructor(options: GameOptions) {
     const canvas = document.querySelector<HTMLCanvasElement>('#game-board');
 
     if (!canvas) {
@@ -35,9 +51,16 @@ export default class Game {
 
     this.ctx = ctx;
     this.canvas = canvas;
+    this.options = options;
 
-    this.frame = Frame.create(this.ctx);
-    this.snake = Snake.create(this.ctx);
+    this.canvasWidth = options.width;
+    this.canvasHeight = options.height;
+
+    this.frame = Frame.create(this.ctx, this.canvasWidth, this.canvasHeight);
+    this.snake = Snake.create(this.ctx, {
+      ateFood: this.incrementScore,
+      killed: this.handleGameOver,
+    });
 
     this.draw();
 
@@ -45,35 +68,49 @@ export default class Game {
     window.addEventListener('keydown', this.handleKeyPress, true);
   }
 
-  private draw = () => {
-    const { width, height } = windowBounds();
-
-    this.canvas.setAttribute('width', width.toString());
-    this.canvas.setAttribute('height', height.toString());
-
+  public draw = () => {
+    this.canvas.setAttribute('width', this.canvasWidth.toString());
+    this.canvas.setAttribute('height', this.canvasHeight.toString());
     this.frame.draw();
     this.snake.draw();
   };
 
-  private speedFactor: SpeedFactor = 1;
+  private score = 40;
+  private level = GameLevel.ONE;
   private timer: NodeJS.Timeout | undefined = undefined;
+
+  private shouldReset = false;
+
+  private reset() {
+    this.score = 40;
+    this.level = GameLevel.ONE;
+    this.snake.reset();
+    this.shouldReset = false;
+  }
 
   public play() {
     if (this.timer) return;
 
-    const delay = 200 - 100 * this.speedFactor;
+    if (this.shouldReset) this.reset();
+
+    const delay = 250 - 50 * this.level;
+    console.log({ delay, level: this.level });
     this.timer = setInterval(() => {
       const isDead = this.snake.move();
       if (isDead) {
         this.pause();
+        this.options.onGameOver && this.options.onGameOver();
       }
     }, delay);
+
+    this.options.onPlay && this.options.onPlay(this.score);
   }
 
   public pause() {
     if (this.timer) {
       clearInterval(this.timer);
       this.timer = undefined;
+      this.options.onPause && this.options.onPause();
     }
   }
 
@@ -85,6 +122,27 @@ export default class Game {
     }
   }
 
+  public levelUp() {
+    if (this.level < 5) {
+      this.pause();
+      this.level++;
+      this.play();
+    }
+  }
+
+  public incrementScore = () => {
+    this.score += 10;
+    this.options.onScoreUpdate && this.options.onScoreUpdate(this.score);
+
+    if (this.score % 100 === 0) {
+      this.levelUp();
+    }
+  };
+
+  public handleGameOver = () => {
+    this.shouldReset = true;
+  };
+
   public handleKeyPress = (e: KeyboardEvent) => {
     if (e.defaultPrevented) {
       return; // Do nothing if the event was already processed
@@ -92,19 +150,15 @@ export default class Game {
 
     switch (e.code) {
       case 'ArrowRight':
-        this.play();
         this.snake.turn('right');
         break;
       case 'ArrowLeft':
-        this.play();
         this.snake.turn('left');
         break;
       case 'ArrowUp':
-        this.play();
         this.snake.turn('up');
         break;
       case 'ArrowDown':
-        this.play();
         this.snake.turn('down');
         break;
       case 'Space':

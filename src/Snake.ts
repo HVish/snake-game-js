@@ -19,12 +19,24 @@ eatAudio.preload = 'auto';
 const outAudio = new Audio('assets/out.wav');
 outAudio.preload = 'auto';
 
+const initialSnakeBody: CellPosition[] = [
+  [4, 1], // head
+  [3, 1],
+  [2, 1],
+  [1, 1], // tail
+];
+
+interface Callbacks {
+  ateFood: () => void;
+  killed: () => void;
+}
+
 export default class Snake {
   public static instance: Snake | undefined;
 
-  public static create(ctx: CanvasRenderingContext2D) {
+  public static create(ctx: CanvasRenderingContext2D, callbacks: Callbacks) {
     if (Snake.instance) return Snake.instance;
-    return new Snake(ctx);
+    return new Snake(ctx, callbacks);
   }
 
   private ctx: CanvasRenderingContext2D;
@@ -34,15 +46,35 @@ export default class Snake {
   /** x, y co-ordinate index */
   public food: CellPosition = [-1, -1];
 
-  private body: CellPosition[] = [
-    [4, 1], // head
-    [3, 1],
-    [2, 1],
-    [1, 1], // tail
-  ];
+  /** used to enable/disable turning */
+  private canTurn = true;
 
-  constructor(ctx: CanvasRenderingContext2D) {
+  private body: CellPosition[] = [...initialSnakeBody];
+
+  private callbacks: Callbacks;
+
+  constructor(ctx: CanvasRenderingContext2D, callbacks: Callbacks) {
     this.ctx = ctx;
+    this.callbacks = callbacks;
+  }
+
+  public reset() {
+    // remove current snake body cells from Frame
+    this.body.forEach((cell) => {
+      this.drawCell(cell, { clear: true });
+    });
+
+    // remove food
+    this.drawCell(this.food, { clear: true });
+
+    this.canTurn = true;
+    this.direction = Direction.EAST;
+
+    this.food = [-1, -1];
+    this.body = [...initialSnakeBody];
+
+    // repaint
+    this.draw();
   }
 
   public drawCell([_x, _y]: CellPosition, options?: CellOptions) {
@@ -139,6 +171,7 @@ export default class Snake {
       eatAudio.play();
       this.addCell(this.getNextHead());
       this.makeFood();
+      this.callbacks.ateFood();
     }
   }
 
@@ -169,10 +202,8 @@ export default class Snake {
         this.drawCell(cell, { fillStyle: 'rgba(110, 110, 110, 0.8)' });
       }
     });
+    this.callbacks.killed();
   }
-
-  /** used to enable/disable turning */
-  private canTurn = false;
 
   public move() {
     const isDead = this.checkIfDead();

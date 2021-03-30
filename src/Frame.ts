@@ -1,5 +1,3 @@
-import { windowBounds } from './utils';
-
 export type CellPosition = [x: number, y: number];
 export const cellPositionHash = (cell: CellPosition) => cell.join();
 
@@ -19,9 +17,9 @@ export default class Frame {
 
   private static instance: Frame | undefined = undefined;
 
-  public static create(ctx: CanvasRenderingContext2D) {
+  public static create(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number) {
     if (Frame.instance) return Frame.instance;
-    return new Frame(ctx);
+    return new Frame(ctx, canvasWidth, canvasHeight);
   }
 
   public static getXCoordinate(x: number) {
@@ -34,15 +32,25 @@ export default class Frame {
 
   private ctx: CanvasRenderingContext2D;
 
+  /** canvas width */
+  private canvasWidth: number;
+  /** canvas height */
+  private canvasHeight: number;
+
+  /** frame painting width */
   public frameWidth = 0;
+  /** frame painting height */
   public frameHeight = 0;
 
-  constructor(ctx: CanvasRenderingContext2D) {
+  constructor(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number) {
     this.ctx = ctx;
+    this.canvasWidth = canvasWidth;
+    this.canvasHeight = canvasHeight;
   }
 
   public draw() {
-    const { width, height } = windowBounds();
+    const width = this.canvasWidth;
+    const height = this.canvasHeight;
 
     // draw main reactangle
     this.ctx.fillStyle = '#000';
