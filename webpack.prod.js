@@ -1,12 +1,16 @@
 // @ts-check
-const path = require('path');
+const { DefinePlugin } = require('webpack');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+
+/** github repo-name for gh-pages deployment */
+const publicPath = '/snake-game-js/';
 
 /**
  * @type {import('webpack').Configuration}
  */
 module.exports = {
   mode: 'production',
+  output: { publicPath },
   module: {
     rules: [
       {
@@ -35,6 +39,9 @@ module.exports = {
       // both options are optional
       filename: '[name].css',
       chunkFilename: '[id].css',
+    }),
+    new DefinePlugin({
+      'process.env.PUBLIC_PATH': JSON.stringify(publicPath),
     }),
   ],
 };

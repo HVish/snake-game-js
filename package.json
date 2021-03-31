@@ -4,10 +4,14 @@
   "description": "a snake game using javascript",
   "main": "index.js",
   "author": "Vishnu Singh <vishnusingh1729@gmail.com>",
+  "repository": {
+    "url": "https://github.com/HVish/snake-game-js"
+  },
   "license": "MIT",
   "private": false,
   "scripts": {
     "build": "webpack --env production --progress --color",
+    "deploy": "gh-pages -d dist",
     "start": "webpack serve --env development --progress --color"
   },
   "devDependencies": {
@@ -18,6 +22,7 @@
     "eslint": "^7.22.0",
     "eslint-config-prettier": "^8.1.0",
     "eslint-plugin-prettier": "^3.3.1",
+    "gh-pages": "^3.1.0",
     "html-webpack-plugin": "^5.3.1",
     "mini-css-extract-plugin": "^1.3.9",
     "prettier": "^2.2.1",

@@ -1,5 +1,5 @@
 // @ts-check
-const path = require('path');
+const { DefinePlugin } = require('webpack');
 
 /**
  * @type {import('webpack').Configuration}
@@ -28,4 +28,9 @@ module.exports = {
       },
     ],
   },
+  plugins: [
+    new DefinePlugin({
+      'process.env.PUBLIC_PATH': JSON.stringify(''),
+    }),
+  ],
 };

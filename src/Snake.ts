@@ -13,10 +13,10 @@ enum Direction {
   WEST,
 }
 
-const eatAudio = new Audio('assets/eat.wav');
+const eatAudio = new Audio(`${process.env.PUBLIC_PATH}assets/eat.wav`);
 eatAudio.preload = 'auto';
 
-const outAudio = new Audio('assets/out.wav');
+const outAudio = new Audio(`${process.env.PUBLIC_PATH}assets/out.wav`);
 outAudio.preload = 'auto';
 
 const initialSnakeBody: CellPosition[] = [

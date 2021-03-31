@@ -5,7 +5,7 @@ module.exports = {
     es6: true,
   },
   extends: ['prettier'],
-  ignorePatterns: ['webpack.*.js'],
+  ignorePatterns: ['webpack.*.js', 'dist/**/*'],
   rules: {
     quotes: ['error', 'single', { allowTemplateLiterals: true }],
     '@typescript-eslint/explicit-function-return-type': 'off',
